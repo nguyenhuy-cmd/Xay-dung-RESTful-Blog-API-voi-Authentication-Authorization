@@ -1,0 +1,18 @@
+
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: restful_blog_mongodb
+    restart: always
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=adminpassword
+      - MONGO_INITDB_DATABASE=blog_db
+
+volumes:
+  mongodb_data:
