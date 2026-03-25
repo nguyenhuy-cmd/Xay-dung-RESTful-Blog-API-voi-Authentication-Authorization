@@ -2,21 +2,21 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
-    userName: {
+    username: {
         type: String,
         required: true,
         unique: true
     },
-    email:{
+    email: {
         type: String,
         require: true,
         unique: true
     },
-    password:{
+    password: {
         type: String,
-        require:true
+        require: true
     },
-    role:{
+    role: {
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
@@ -27,13 +27,9 @@ const userSchema = new mongoose.Schema({
 });
 
 // Mã hóa mật khẩu trước khi lưu
-userSchema.pre('save', async function(next){
-    if(!this.isModified('password')) return next;
+userSchema.pre('save', async function () {
+    if (!this.isModified('password')) return;
     this.password = await bcrypt.hash(this.password, 10);
-    next();
-    if(password.length < 6){
-        return res.status(400).json({message: 'Password must be at least 6 characters long'})
-    }
 });
 
 module.exports = mongoose.model('User', userSchema);

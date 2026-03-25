@@ -1,56 +1,46 @@
-const jwt = require('jsonwebtoken');
+// auth.js - Middleware xác thực và phân quyền
+const verifyToken = require('../utils/verifyToken');
 const Post = require('../models/Post');
 
-const protect = (req, res, next) => {
+// Middleware xác thực token (bảo vệ route)
+const protect = async (req, res, next) => {
+    // Lấy token từ header Authorization: "Bearer <token>"
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Vui lòng đăng nhập!' });
 
-    // Lấy token từ header nếu không có token thì trả về lỗi
-    const token = req.headers.authorization?.split('')[1];
-    if(!token) return res.status(400).json({error: 'Không có quyền truy cập'});
-
-    try{ 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;// Lưu thông tin user vào request
-        next();
-    }catch(error){
-        res.status(400).json( {error: "Không hợp lệ"});
-    }
-}
-
-const authorization = (...roles) => {
-    return (req, res, next) => {
-        if(!roles.includes(req.user.role)){
-            return res.status(403).json({error: 'Không có quyền truy cập'});
-        }
-        next();
-    }
-}
-
-exports.protect = async(req, res, next) => {
-    let token = req.headers.authorization?.split (' ')[1];
-    if(!token) return res.status(401).json({error: 'Vui lòng đăng nhập!'});
-    try{
-        const decoded = jwd.verify(token, process.env.JWT_SECRET);
+    try {
+        const decoded = verifyToken(token); // Dùng hàm tiện ích thay vì jwt.verify trực tiếp
         req.user = decoded; // Lưu thông tin user vào request
         next();
-    }catch(error){
-        res.status(400).json({error: 'Không hợp lệ'});
+    } catch (error) {
+        res.status(401).json({ error: 'Token không hợp lệ' });
     }
 };
 
-// kiểm tra quyền (chủ bài hoặc admin)
-exports.isOwnerOrAdmin = async(req,res, next) => {
-    try{
-        const post = await Post.findById(req.params.id);
-        if(!post) return res.status(404).json({error: 'Bài viết chưa được viết'});
-
-        if(req.user.role === 'admin' || post.author.toString() ===req.user.id){
-            next();
-        }else{
-            return res.status(403).json({error: 'Ban không được sửa bài này'})
+// Middleware phân quyền theo role (admin, user...)
+const authorization = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ error: 'Không có quyền truy cập' });
         }
-    }catch(err){
-        return res.status(500).json({errer: 'Lỗi server'})  
-    }
-}
+        next();
+    };
+};
 
-module.exports = {protect, authorization};
+// Middleware kiểm tra quyền (chủ bài viết hoặc admin)
+const isOwnerOrAdmin = async (req, res, next) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ error: 'Bài viết không tồn tại' });
+
+        if (req.user.role === 'admin' || post.author.toString() === req.user.id) {
+            next();
+        } else {
+            return res.status(403).json({ error: 'Bạn không được sửa bài này' });
+        }
+    } catch (err) {
+        return res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+module.exports = { protect, authorization, isOwnerOrAdmin };

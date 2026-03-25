@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 
 const postSchema = new mongoose.Schema({
     title:{
@@ -25,4 +24,4 @@ const postSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model('Post');
+module.exports = mongoose.model('Post', postSchema);

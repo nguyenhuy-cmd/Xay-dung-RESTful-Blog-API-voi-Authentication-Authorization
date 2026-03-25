@@ -1,28 +1,24 @@
-const User = require('../models/User');
-const jwt = require('jsonwebtoken'); // Công cụ để tạo và soi "Thẻ thông hành" (Token): dùng để tạo đăng nhập và đăng kí 
+// authController.js - Tầng điều khiển: chỉ nhận request, gọi service, trả response
+const authService = require('../services/authService');
 
-exports.register = async(req, res) => {
-    try{
-        const {username, email, password} = req.body;
-        const userExist = await User.findOne({email});
-        if(userExist) return res.status(400).json({message: 'Email đã tồn tại'})
+// Đăng ký
+exports.register = async (req, res) => {
+    try {
+        const { username, email, password } = req.body;
+        await authService.registerUser(username, email, password);
+        res.status(201).json({ message: 'Đăng kí thành công' });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
 
-            const user = await User.create({username, email, password});
-            res.status(201).json({message: 'Đăng kí thành công'});
-    }catch(error){
-        res.status(400).json({error: error.message})
+// Đăng nhập
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const token = await authService.loginUser(email, password);
+        res.status(200).json({ token });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
     }
-}
-exports.login = async(req, res)=> {
-    try{
-        const {email, password} = req.body;
-        const user = await User.findOne({email});
-        if(!user) return res.status(400).json({message: 'Email không tồn tại'});
-        const isMatch = await bcrypt.compare(password, user.password);
-        if(!isMatch) return res.status(400).json({message: 'Sai mật khẩu'});
-        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET, {expiresIn: '1d'});
-        res.status(200).json({token});
-    }catch(error){
-        res.status(400).json({error: error.message})
-    }
-}        
+};
